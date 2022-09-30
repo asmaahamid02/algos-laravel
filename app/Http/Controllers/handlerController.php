@@ -106,7 +106,13 @@ class handlerController extends Controller
             $count++;
         }
         rsort($arr);
-        return response()->json($arr, 200);
+        return response()->json(
+            [
+                'status' => 'success',
+                'message' => $arr
+            ],
+            200
+        );
 
         // for ($i = $temp_number; $i > 0; $i++) {
         //     $remainder = $temp_number % 10;
@@ -129,5 +135,38 @@ class handlerController extends Controller
         // }
 
         // print_r($arr);
+    }
+
+    public function numbersToBinary(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'string' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 500);
+        }
+
+        $string = $request->string;
+
+        // $string_array = str_split($string);
+
+        // for ($i = 0; $i < count($string_array); $i++) {
+        //     if (is_numeric($string_array[$i])) {
+        //         $string_array[$i] = decbin($string_array[$i]);
+        //     }
+        // }
+
+        $replaced_str = preg_replace_callback('/[0-9]+/', function ($matches) {
+            return decbin($matches[0]);
+        }, $string);
+
+        return response()->json(
+            [
+                'status' => 'success',
+                'message' => $replaced_str
+            ],
+            200
+        );
     }
 }
