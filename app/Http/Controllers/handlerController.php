@@ -80,4 +80,54 @@ class handlerController extends Controller
 
         // print_r($string_to_array);
     }
+
+    public function placeValueInNumber(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'number' => 'required|numeric'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 500);
+        }
+
+        $number = $request->number;
+
+        $temp_number = $number;
+        $arr = [];
+        $count = 0;
+        $total = 1;
+        while ($number != 0) {
+            $remainder = $number % 10;
+            $number = floor($number / 10);
+
+            array_push($arr, $total * $remainder * pow(10, $count));
+
+            $count++;
+        }
+        rsort($arr);
+        return response()->json($arr, 200);
+
+        // for ($i = $temp_number; $i > 0; $i++) {
+        //     $remainder = $temp_number % 10;
+        //     $temp_number = floor($temp_number / 10);
+        //     $total = 1;
+        //     $temp_num = $number;
+
+        //     while ($temp_num != 0) {
+        //         $rem = $temp_num % 10;
+        //         $temp_num = floor($temp_num / 10);
+
+        //         if ($rem === $remainder) {
+
+        //             array_push($arr, $total * $rem);
+        //             break;
+        //         }
+
+        //         $total *= 10;
+        //     }
+        // }
+
+        // print_r($arr);
+    }
 }
