@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class handlerController extends Controller
 {
@@ -23,29 +24,13 @@ class handlerController extends Controller
         //transform string into array
         $string_to_array = str_split($string);
         //define and initialize an empty array
-        // $ascii_array = array_fill(0, 256, 0);
 
-        // for ($i = 0; $i < count($string_to_array); $i++) {
-        //     $ascii_array[ord($string_to_array[$i])]++;
-        // }
+        $upper_cases = array();
+        $lower_cases = array();
+        $numbers = array();
+        $main_array = array();
 
-        // print_r($ascii_array);
-        // for ($k = 0; $k < count($ascii_array); $k++) {
-        //     if ($ascii_array[$k] != 0) {
-        //         for ($j = 0; $j < $i; $j++) {
-        //             echo chr($k);
-        //         }
-        //     }
-        // }
-        // $result = '';
-        // return response()->json([
-        //     'sorted_string' => $ascii_array
-        // ]);
-
-        $upper_cases = [];
-        $lower_cases = [];
-        $numbers = [];
-
+        //split the array into upper cases, lower cases, and numbers
         foreach ($string_to_array as $val) {
             if ($val >= 'a' && $val <= 'z')
                 array_push($lower_cases, $val);
@@ -55,30 +40,51 @@ class handlerController extends Controller
                 array_push($numbers, $val);
         }
 
-        sort($upper_cases);
+        //sort the new arrays
         sort($lower_cases);
+        sort($upper_cases);
         sort($numbers);
+
+
+        //get the count of the smallest array
+        $count = count($lower_cases) > count($upper_cases) ? count($upper_cases) : count($lower_cases);
+
+        //fill the main array alternatively (lower, upper ...)
         $i = 0;
-        $j = 0;
-        $k = 0;
+        while ($count > 0) {
+            array_push($main_array, $lower_cases[$i]);
+            array_push($main_array, $upper_cases[$i]);
+            $i++;
+            $count--;
+        }
 
-        $sorted_array = [];
-        sort($string_to_array);
-        print_r($string_to_array);
-        // for ($l = 0; $l < count($string_to_array); $l++) {
-        //     if ($string_to_array[$l] >= 'a' && $string_to_array[$l] <= 'z' && count($lower_cases) > 0) {
-        //         $string_to_array[$l] = $lower_cases[$i];
-        //         $i++;
-        //     } else if ($string_to_array[$l] >= 'A' && $string_to_array[$l] <= 'Z' && count($upper_cases) > 0) {
-        //         $string_to_array[$l] = $upper_cases[$j];
-        //         $j++;
-        //     } else {
-        //         $string_to_array[$l] = $numbers[$k];
-        //         $k++;
-        //     }
-        // }
+        //get the remaining letters from upper cases
+        while ($i < count($upper_cases)) {
+            array_push($main_array, $upper_cases[$i]);
+            $i++;
+        }
 
-        // print_r($string_to_array);
+        //get the remaining letters from lowers cases
+        while ($i < count($lower_cases)) {
+            array_push($main_array, $lower_cases[$i]);
+            $i++;
+        }
+
+        //push the numbers to the main array
+        for ($j = 0; $j < count($numbers); $j++) {
+            array_push($main_array, $numbers[$j]);
+        }
+
+        //transform array to string
+        $sorted_string = implode('', $main_array);
+
+        return response()->json(
+            [
+                'status' => 'success',
+                'message' => $sorted_string
+            ],
+            200
+        );
     }
 
     public function placeValueInNumber(Request $request)
@@ -93,19 +99,30 @@ class handlerController extends Controller
 
         $number = $request->number;
 
-        $temp_number = $number;
+        $negative = false;
+        if ($number < 0) {
+            $negative = true;
+            $number = abs($number);
+        }
         $arr = [];
         $count = 0;
         $total = 1;
         while ($number != 0) {
+            //extract the extreme digit
             $remainder = $number % 10;
+            //divide by 10 to remove the extracted digit
             $number = floor($number / 10);
 
-            array_push($arr, $total * $remainder * pow(10, $count));
+            //get the place value of the digit
+            $place_value = $total * $remainder * pow(10, $count);
+            //chnage the sign if it is negative number
+            $place_value = ($negative) ? $place_value * (-1) : $place_value;
+            array_push($arr, $place_value);
 
             $count++;
         }
-        rsort($arr);
+        //sort the digits values
+        ($negative) ? sort($arr) : rsort($arr);
         return response()->json(
             [
                 'status' => 'success',
@@ -113,28 +130,6 @@ class handlerController extends Controller
             ],
             200
         );
-
-        // for ($i = $temp_number; $i > 0; $i++) {
-        //     $remainder = $temp_number % 10;
-        //     $temp_number = floor($temp_number / 10);
-        //     $total = 1;
-        //     $temp_num = $number;
-
-        //     while ($temp_num != 0) {
-        //         $rem = $temp_num % 10;
-        //         $temp_num = floor($temp_num / 10);
-
-        //         if ($rem === $remainder) {
-
-        //             array_push($arr, $total * $rem);
-        //             break;
-        //         }
-
-        //         $total *= 10;
-        //     }
-        // }
-
-        // print_r($arr);
     }
 
     public function numbersToBinary(Request $request)
@@ -149,14 +144,7 @@ class handlerController extends Controller
 
         $string = $request->string;
 
-        // $string_array = str_split($string);
-
-        // for ($i = 0; $i < count($string_array); $i++) {
-        //     if (is_numeric($string_array[$i])) {
-        //         $string_array[$i] = decbin($string_array[$i]);
-        //     }
-        // }
-
+        //replace the numbers with their binary code
         $replaced_str = preg_replace_callback('/[0-9]+/', function ($matches) {
             return decbin($matches[0]);
         }, $string);
@@ -168,5 +156,57 @@ class handlerController extends Controller
             ],
             200
         );
+    }
+
+    public function prefixNotation(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'expression' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 500);
+        }
+
+        $expression = $request->expression;
+
+        //extract the operators 
+        $operators = array();
+        $operands = array();
+
+        $expression_array = explode(" ", $expression);
+        foreach ($expression_array as $val) {
+            if ($val == '+' || $val == '-' || $val == '*' || $val == '/') {
+                //push the operator at the end of the array
+                array_push($operators, $val);
+            } else {
+                //push the operand at the beginning of the array
+                array_unshift($operands, $val);
+            }
+        }
+
+        print_r($operators);
+        print_r($operands);
+        $full_expression = '';
+        while (count($operands) > 1) {
+            $full_expression = '';
+            //get the first operand (from top)
+            $full_expression .= array_pop($operands);
+
+            //get the operator if it is existed
+            if (count($operators) > 0) {
+                $full_expression .= array_pop($operators);
+            }
+
+            //get the next operand
+            $full_expression .= array_pop($operands);
+            array_push($operands, eval('return ' . $full_expression . ';'));
+        }
+        //get the value of the math. expression from the string
+        // $result = eval('return ' . $full_expression . ';');
+        return response()->json([
+            'status' => 'success',
+            'message' =>  $operands[0]
+        ]);
     }
 }
